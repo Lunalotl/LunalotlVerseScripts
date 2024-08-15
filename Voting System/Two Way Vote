@@ -1,0 +1,89 @@
+<#
+ ___       ___  ___  ________   ________  ___       ________  _________  ___          
+|\  \     |\  \|\  \|\   ___  \|\   __  \|\  \     |\   __  \|\___   ___\\  \         
+\ \  \    \ \  \\\  \ \  \\ \  \ \  \|\  \ \  \    \ \  \|\  \|___ \  \_\ \  \        
+ \ \  \    \ \  \\\  \ \  \\ \  \ \   __  \ \  \    \ \  \\\  \   \ \  \ \ \  \       
+  \ \  \____\ \  \\\  \ \  \\ \  \ \  \ \  \ \  \____\ \  \\\  \   \ \  \ \ \  \____  
+   \ \_______\ \_______\ \__\\ \__\ \__\ \__\ \_______\ \_______\   \ \__\ \ \_______\
+    \|_______|\|_______|\|__| \|__|\|__|\|__|\|_______|\|_______|    \|__|  \|_______|
+
+
+>>> If you're using this script, all I ask is for proper credit! I'd prefer you just link my socials (Twitter/X, YouTube, etc.) :)
+
+>>> Questions? Join my Discord and ask, I'll do my best to help out: https://discord.gg/2zJsUqj8Ex
+
+#>
+
+
+using { /Fortnite.com/Devices }
+using { /Verse.org/Simulation }
+using { /Verse.org/Random }
+using { /UnrealEngine.com/Temporary/Diagnostics }
+
+
+mode_vote_manager := class(creative_device):
+
+
+    @editable 
+    PopupDialogue : popup_dialog_device = popup_dialog_device{} # pop up dialogue device, players will vote using BUTTON 1 or BUTTON 2
+
+    @editable
+    TallyVotesTimer : timer_device = timer_device{} # timer device, it should start when the pop up dialogue device first appears. when it ends, it should hide the popup dialogue device. it will tally the votes and send signals.
+
+    @editable
+    Button1WonTrigger : trigger_device = trigger_device{} # trigger device 1, will send signal if vote option 1 wins
+    @editable
+    Button2WonTrigger : trigger_device = trigger_device{} # trigger device 12, will send signal if vote option 2 wins
+
+    # these are the total votes per option. do not edit this value.
+    var Option1Votes : int = 0
+    var Option2Votes : int = 0
+
+    OnBegin<override>()<suspends>:void=
+ 
+        PopupDialogue.RespondingButtonEvent.Subscribe(VoteCast) # subscribe to the respondingbuttonevent for the pop up dialogue device,
+
+        TallyVotesTimer.SuccessEvent.Subscribe(TallyVotes) # subscribe to the success event for the timer
+
+
+    # this function is called when someone presses a button on the popupdialogue device
+    VoteCast(Agent : agent, OptionMinus1 : int):void=
+
+        # adds 1 to chosen option, as button #s start counting at zero. button 1 would equal 0, button 2 would equal 1, and so on
+        var OptionChosen : int = OptionMinus1 + 1
+        Print("Option Chosen: {OptionChosen}")
+
+            # checks which option was chosen
+            if (OptionChosen = 1):
+                set Option1Votes += 1
+                Print("Option 1 Chosen. It has {Option1Votes} Votes.")
+            else if (OptionChosen = 2):
+                set Option2Votes += 1
+                Print("Option 2 Chosen. It has {Option2Votes} Votes.")
+            else:
+                Print("Option that wasn't 1 or 2 was chosen. That should not be possible.")
+
+
+    # tallies the votes when timer success event is triggered
+    TallyVotes(Agent : ?agent):void=
+
+        # really long if else statement to compare values.
+        if (Option1Votes > Option2Votes):
+            Button1WonTrigger.Trigger()
+            Print("Option 1 has won. It had {Option1Votes} votes.")
+        else if (Option2Votes > Option1Votes):
+            Button2WonTrigger.Trigger()
+            Print("Option 2 has won. It had {Option2Votes} votes.")
+        else if (Option1Votes = Option2Votes):
+            Tiebreaker : int = GetRandomInt(1, 2)
+            if (Tiebreaker = 1):
+                Button1WonTrigger.Trigger()
+                Print("Option 1 has won via. Tiebreaker({Tiebreaker}). It had {Option1Votes} votes.")
+            if (Tiebreaker = 2):
+                Button2WonTrigger.Trigger()
+                Print("Option 2 has won via. Tiebreaker({Tiebreaker}). It had {Option2Votes} votes.")
+        else if (Option1Votes = 0 and Option2Votes = 0):
+            Button1WonTrigger.Trigger()
+            Print("Nobody voted, selecting Option1.") 
+        else:
+            Print("There was no winning option or tie. This shouldn't be possible.")
