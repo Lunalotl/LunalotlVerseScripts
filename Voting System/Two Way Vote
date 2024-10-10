@@ -14,14 +14,13 @@
 
 #>
 
-
 using { /Fortnite.com/Devices }
 using { /Verse.org/Simulation }
 using { /Verse.org/Random }
 using { /UnrealEngine.com/Temporary/Diagnostics }
 
 
-mode_vote_manager := class(creative_device):
+two_way_vote := class(creative_device):
 
 
     @editable 
@@ -68,6 +67,7 @@ mode_vote_manager := class(creative_device):
     TallyVotes(Agent : ?agent):void=
 
         # really long if else statement to compare values.
+        # dude no joke i am so dumb there is ABSOLUTELY a better way to compare all these values please if you know a way dm me on discord or twitter
         if (Option1Votes > Option2Votes):
             Button1WonTrigger.Trigger()
             Print("Option 1 has won. It had {Option1Votes} votes.")
@@ -87,3 +87,7 @@ mode_vote_manager := class(creative_device):
             Print("Nobody voted, selecting Option1.") 
         else:
             Print("There was no winning option or tie. This shouldn't be possible.")
+
+        # after the vote is over and the result has been selected, reset total votes back to zero in case you're going to do another vote
+        set Option1Votes = 0
+        set Option2Votes = 0
