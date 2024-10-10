@@ -1,0 +1,126 @@
+<#
+ ___       ___  ___  ________   ________  ___       ________  _________  ___          
+|\  \     |\  \|\  \|\   ___  \|\   __  \|\  \     |\   __  \|\___   ___\\  \         
+\ \  \    \ \  \\\  \ \  \\ \  \ \  \|\  \ \  \    \ \  \|\  \|___ \  \_\ \  \        
+ \ \  \    \ \  \\\  \ \  \\ \  \ \   __  \ \  \    \ \  \\\  \   \ \  \ \ \  \       
+  \ \  \____\ \  \\\  \ \  \\ \  \ \  \ \  \ \  \____\ \  \\\  \   \ \  \ \ \  \____  
+   \ \_______\ \_______\ \__\\ \__\ \__\ \__\ \_______\ \_______\   \ \__\ \ \_______\
+    \|_______|\|_______|\|__| \|__|\|__|\|__|\|_______|\|_______|    \|__|  \|_______|
+
+
+>>> If you're using this script, all I ask is for proper credit! I'd prefer you just link my socials (Twitter/X, YouTube, etc.) :)
+
+>>> Questions? Join my Discord and ask, I'll do my best to help out: https://discord.gg/2zJsUqj8Ex
+
+#>
+
+using { /Fortnite.com/Devices }
+using { /Verse.org/Simulation }
+using { /Verse.org/Random }
+using { /UnrealEngine.com/Temporary/Diagnostics }
+
+
+three_way_vote := class(creative_device):
+
+
+    @editable 
+    PopupDialogue : popup_dialog_device = popup_dialog_device{} # pop up dialogue device, players will vote using BUTTON 1 or BUTTON 2
+
+    @editable
+    TallyVotesTimer : timer_device = timer_device{} # timer device, it should start when the pop up dialogue device first appears. when it ends, it should hide the popup dialogue device. it will tally the votes and send signals.
+
+    @editable
+    Button1WonTrigger : trigger_device = trigger_device{} # trigger device 1, will send signal if vote option 1 wins
+    @editable
+    Button2WonTrigger : trigger_device = trigger_device{} # trigger device 2, will send signal if vote option 2 wins
+    @editable
+    Button3WonTrigger : trigger_device = trigger_device{} # trigger device 3, will send signal if vote option 3 wins
+
+    # these are the total votes per option. do not edit this value.
+    var Option1Votes : int = 0
+    var Option2Votes : int = 0
+    var Option3Votes : int = 0
+
+    OnBegin<override>()<suspends>:void=
+ 
+        PopupDialogue.RespondingButtonEvent.Subscribe(VoteCast) # subscribe to the respondingbuttonevent for the pop up dialogue device,
+
+        TallyVotesTimer.SuccessEvent.Subscribe(TallyVotes) # subscribe to the success event for the timer
+
+
+    # this function is called when someone presses a button on the popupdialogue device
+    VoteCast(Agent : agent, OptionMinus1 : int):void=
+
+        # adds 1 to chosen option, as button #s start counting at zero. button 1 would equal 0, button 2 would equal 1, and so on
+        var OptionChosen : int = OptionMinus1 + 1
+        Print("Option Chosen: {OptionChosen}")
+
+            # checks which option was chosen
+            if (OptionChosen = 1):
+                set Option1Votes += 1
+                Print("Option 1 Chosen. It has {Option1Votes} Votes.")
+            else if (OptionChosen = 2):
+                set Option2Votes += 1
+                Print("Option 2 Chosen. It has {Option2Votes} Votes.")
+            else if (OptionChosen = 3):
+                set Option3Votes += 1
+                Print("Option 3 Chosen. It has {Option3Votes} Votes.")
+            else:
+                Print("Option that wasn't 1, 2, or 3 was chosen. That should not be possible.")
+
+
+    # tallies the votes when timer success event is triggered
+    TallyVotes(Agent : ?agent):void=
+
+        if (Option1Votes > Option2Votes and Option1Votes > Option3Votes):
+            Button1WonTrigger.Trigger()
+            Print("Option 1 has won. It had {Option1Votes} votes.")
+        else if (Option2Votes > Option1Votes and Option2Votes > Option3Votes):
+            Button2WonTrigger.Trigger()
+            Print("Option 2 has won. It had {Option2Votes} votes.")
+        else if (Option3Votes > Option1Votes and Option3Votes > Option2Votes):
+            Button3WonTrigger.Trigger()
+            Print("Option 3 has won. It had {Option3Votes} votes.")
+        else if (Option1Votes > Option3Votes and Option2Votes > Option3Votes):
+            Tiebreaker : int = GetRandomInt(1, 2)
+            if (Tiebreaker = 1):
+                Button1WonTrigger.Trigger()
+                Print("Option 1 has won via. Tiebreaker({Tiebreaker}). It had {Option1Votes} votes.")
+            if (Tiebreaker = 2):
+                Button2WonTrigger.Trigger()
+                Print("Option 2 has won via. Tiebreaker({Tiebreaker}). It had {Option2Votes} votes.")
+        else if (Option1Votes > Option2Votes and Option3Votes > Option2Votes):
+            Tiebreaker : int = GetRandomInt(1, 2)
+            if (Tiebreaker = 1):
+                Button1WonTrigger.Trigger()
+                Print("Option 1 has won via. Tiebreaker({Tiebreaker}). It had {Option1Votes} votes.")
+            if (Tiebreaker = 2):
+                Button3WonTrigger.Trigger()
+                Print("Option 3 has won via. Tiebreaker({Tiebreaker}). It had {Option3Votes} votes.")
+        else if (Option2Votes > Option1Votes and Option3Votes > Option1Votes):
+            Tiebreaker : int = GetRandomInt(1, 2)
+            if (Tiebreaker = 1):
+                Button2WonTrigger.Trigger()
+                Print("Option 2 has won via. Tiebreaker({Tiebreaker}). It had {Option2Votes} votes.")
+            if (Tiebreaker = 2):
+                Button3WonTrigger.Trigger()
+                Print("Option 3 has won via. Tiebreaker({Tiebreaker}). It had {Option3Votes} votes.")
+        else if (Option1Votes = Option2Votes and Option2Votes = Option3Votes):
+            Tiebreaker : int = GetRandomInt(1, 3)
+            if (Tiebreaker = 1):
+                Button1WonTrigger.Trigger()
+                Print("Option 1 has won via. Tiebreaker({Tiebreaker}). It had {Option1Votes} votes.")
+            if (Tiebreaker = 2):
+                Button2WonTrigger.Trigger()
+                Print("Option 2 has won via. Tiebreaker({Tiebreaker}). It had {Option2Votes} votes.")
+            if (Tiebreaker = 3):
+                Button3WonTrigger.Trigger()
+                Print("Option 3 has won via. Tiebreaker({Tiebreaker}). It had {Option3Votes} votes.")
+        else if (Option1Votes = 0 and Option2Votes = 0 and Option3Votes = 0):
+            Button1WonTrigger.Trigger()
+            Print("Nobody voted, selecting Option1.") 
+
+        # after the vote is over and the result has been selected, reset total votes back to zero in case you're going to do another vote
+        set Option1Votes = 0
+        set Option2Votes = 0
+        set Option3Votes = 0
